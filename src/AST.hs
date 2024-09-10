@@ -9,11 +9,15 @@ data Exp a where
   -- Expresiones enteras
   Const  :: Int -> Exp Int
   Var    :: Variable -> Exp Int
+  VarInc :: Variable -> Exp Int
+  VarDec :: Variable -> Exp Int
   UMinus :: Exp Int -> Exp Int
   Plus   :: Exp Int -> Exp Int -> Exp Int
   Minus  :: Exp Int -> Exp Int -> Exp Int
   Times  :: Exp Int -> Exp Int -> Exp Int
   Div    :: Exp Int -> Exp Int -> Exp Int
+  EAssgn :: Variable -> Exp Int -> Exp Int
+  ESeq   :: Exp Int -> Exp Int -> Exp Int
 
   -- Expresiones booleanas
   BTrue  :: Exp Bool
