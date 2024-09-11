@@ -43,9 +43,9 @@ lis = makeTokenParser
     }
   )
 
----------------------------------------
+-----------------------------------
 --- Parser de expresiones enteras
----------------------------------------
+-----------------------------------
 -- Parser de constantes enteras
 consExp :: Parser (Exp Int)
 consExp = do nat <- natural lis
@@ -57,22 +57,21 @@ varExp = do var <- identifier lis
             return (Var var)
 
 -- Parser de operador ++
-varInc :: Parser (Exp Int)
-varInc = do var <- identifier lis
-            reservedOp lis "++"
-            return (VarInc var)
+varIncExp :: Parser (Exp Int)
+varIncExp = do var <- identifier lis
+               reservedOp lis "++"
+               return (VarInc var)
 
 -- Parser de operador --
-varDec :: Parser (Exp Int)
-varDec = do var <- identifier lis
-            reservedOp lis "--"
-            return (VarDec var)
+varDecExp :: Parser (Exp Int)
+varDecExp = do var <- identifier lis
+               reservedOp lis "--"
+               return (VarDec var)
 
 -- Parser del operador unario -
 umExp :: Parser (Exp Int)
 umExp = do reservedOp lis "-"
-           e <- intexp5
-           return (UMinus e)
+           UMinus <$> intexp3
 
 -- Parser de operador +
 plusExp :: Parser (Exp Int -> Exp Int -> Exp Int)
@@ -94,38 +93,26 @@ divExp :: Parser (Exp Int -> Exp Int -> Exp Int)
 divExp = do reservedOp lis "/"
             return Div
 
--- Parser de asignaciones de intexp
-assgExp :: Parser (Exp Int)
-assgExp = do var <- identifier lis  
-             reservedOp lis "="
-             e <- intexp2
-             return (EAssgn var e)
-
 -- parser de precedencia de operadores
+
 intexp0 :: Parser (Exp Int)
-intexp0 = chainl1 intexp1 seqExp
+intexp0 = chainl1 intexp1 (minusExp <|> plusExp)
 
 intexp1 :: Parser (Exp Int)
-intexp1 = try assgExp <|> intexp2
+intexp1 = chainl1 intexp2 (timesExp <|> divExp)
 
 intexp2 :: Parser (Exp Int)
-intexp2 = chainl1 intexp3 (minusExp <|> plusExp)
+intexp2 = umExp <|> intexp3
 
 intexp3 :: Parser (Exp Int)
-intexp3 = chainl1 intexp4 (timesExp <|> divExp)
+intexp3 = parens lis intexp0 <|> consExp <|> try varIncExp <|> try varDecExp <|> varExp
 
-intexp4 :: Parser (Exp Int)
-intexp4 = varInc <|> varDec <|> umExp <|> intexp5
-
-intexp5 :: Parser (Exp Int)
-intexp5 = parens lis intexp0 <|> varExp <|> consExp
-          
 intexp :: Parser (Exp Int)
 intexp = intexp0
 
----------------------------------------
---- Parser de expressiones booleanas
----------------------------------------
+------------------------------------
+--- Parser de expresiones booleanas
+------------------------------------
 -- Parser expresion atómica
 atomBool :: Parser (Exp Bool)
 atomBool = trueBool <|> falseBool
@@ -137,32 +124,30 @@ atomBool = trueBool <|> falseBool
 eqBool :: Parser (Exp Int -> Exp Bool)
 eqBool = do reservedOp lis "=="
             ie <- intexp
-            return (\x -> (Eq x ie))
+            return (`Eq` ie)
 
 -- Parser '!='
 neqBool :: Parser (Exp Int -> Exp Bool)
 neqBool = do reservedOp lis "!="
              ie <- intexp
-             return (\x -> (NEq x ie))
+             return (`NEq` ie)
 
 -- Parser '<'
 ltBool :: Parser (Exp Int -> Exp Bool)
 ltBool = do reservedOp lis "<"
             ie <- intexp
-            return (\x -> (Lt x ie))
+            return (`Lt` ie)
 
 -- Parser '>'
 gtBool :: Parser (Exp Int -> Exp Bool)
 gtBool = do reservedOp lis ">"
             ie <- intexp
-            return (\x -> (Gt x ie))
+            return (`Gt` ie)
 
 --Parser de comparación
 compBool :: Parser (Exp Bool)
 compBool = do ie <- intexp
-              f <- gtBool <|> ltBool 
-                   <|> 
-                   eqBool <|> neqBool 
+              f <- gtBool <|> ltBool <|> eqBool <|> neqBool
               return (f ie)
 
 -- Parser '&&'
@@ -178,8 +163,7 @@ orBool = do reservedOp lis "||"
 -- Parser '!'
 notBool :: Parser (Exp Bool)
 notBool = do reservedOp lis "!"
-             be <- boolexp3
-             return (Not be)
+             Not <$> boolexp3
 
 -- Parsers de precedencia de operadores
 boolexp0 :: Parser (Exp Bool)
@@ -192,14 +176,14 @@ boolexp2 :: Parser (Exp Bool)
 boolexp2 = notBool <|> boolexp3
 
 boolexp3 :: Parser (Exp Bool)
-boolexp3 = compBool <|> parens lis boolexp0 <|> atomBool
+boolexp3 = parens lis boolexp0 <|> atomBool <|> compBool
 
 boolexp :: Parser (Exp Bool)
 boolexp = boolexp0
 
----------------------------------------
+-----------------------------------
 --- Parser de comandos
----------------------------------------
+-----------------------------------
 -- Parser "skip"
 skipComm :: Parser Comm
 skipComm = do reserved lis "skip"
@@ -209,8 +193,7 @@ skipComm = do reserved lis "skip"
 letComm :: Parser Comm
 letComm = do var <- identifier lis 
              reservedOp lis "="
-             ie <- intexp
-             return (Let var ie)
+             Let var <$> intexp
 
 -- Parser ';'
 seqComm :: Parser (Comm -> Comm -> Comm)
@@ -222,33 +205,32 @@ iteComm :: Parser Comm
 iteComm = do reserved lis "if"
              be <- boolexp
              cm <- braces lis comm
-             (do reserved lis "else"
-                 cme <- braces lis comm
-                 return (IfThenElse be cm cme)
-                 <|>
-                 return (IfThenElse be cm Skip))
-         
--- Parser "repeat b until c end"
+             do reserved lis "else"
+                cme <- braces lis comm
+                return (IfThenElse be cm cme)
+                <|>
+                return (IfThen be cm)
+
+-- Parser "repeat b until c"
 ruComm :: Parser Comm
 ruComm = do reserved lis "repeat" 
-            cm <- comm
+            cm <- braces lis comm
             reserved lis "until"
-            be <- boolexp
-            reserved lis "end"
-            return (RepeatUntil cm be)
+            RepeatUntil cm <$> boolexp
 
 -- Parser con precedencia de operadores
 comm0 :: Parser Comm
-comm0 = chainl1 comm1 seqComm <|> comm1
+comm0 = chainl1 comm1 seqComm
 
 comm1 :: Parser Comm
-comm1 = skipComm <|> try letComm <|> iteComm <|> ruComm
+comm1 = skipComm <|> letComm <|> iteComm <|> ruComm
 
 comm :: Parser Comm
 comm = comm0
 
-----------------------------------------
+------------------------------------
 -- Función de parseo
-----------------------------------------
+------------------------------------
 parseComm :: SourceName -> String -> Either ParseError Comm
 parseComm = parse (totParser comm)
+
