@@ -27,8 +27,8 @@ testSqrt comm = TestCase $ assertEqual msg res (eval comm)
 tests :: [(Comm -> Test, FilePath)]
 tests =
     [
-      (testSkip, "ejemplos/eval/skip.lis")
-    , (testSqrt, "ejemplos/eval/sqrt.lis")
+      (testSkip, "ejemplos/skip.lis")
+    , (testSqrt, "ejemplos/sqrt.lis")
     ]
 
 -- | Run tests
