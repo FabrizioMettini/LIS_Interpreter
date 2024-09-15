@@ -54,24 +54,18 @@ consExp = do nat <- natural lis
 -- Parser de variables
 varExp :: Parser (Exp Int)
 varExp = do var <- identifier lis
-            return (Var var)
-
--- Parser de operador ++
-varIncExp :: Parser (Exp Int)
-varIncExp = do var <- identifier lis
-               reservedOp lis "++"
+            do reservedOp lis "++"
                return (VarInc var)
-
--- Parser de operador --
-varDecExp :: Parser (Exp Int)
-varDecExp = do var <- identifier lis
-               reservedOp lis "--"
-               return (VarDec var)
+               <|>
+               do reservedOp lis "--"
+                  return (VarDec var)
+                  <|>
+                  return (Var var)
 
 -- Parser del operador unario -
 umExp :: Parser (Exp Int)
 umExp = do reservedOp lis "-"
-           UMinus <$> intexp3
+           UMinus <$> intexp2
 
 -- Parser de operador +
 plusExp :: Parser (Exp Int -> Exp Int -> Exp Int)
@@ -105,7 +99,7 @@ intexp2 :: Parser (Exp Int)
 intexp2 = umExp <|> intexp3
 
 intexp3 :: Parser (Exp Int)
-intexp3 = parens lis intexp0 <|> consExp <|> try varIncExp <|> try varDecExp <|> varExp
+intexp3 = parens lis intexp0 <|> consExp <|> varExp
 
 intexp :: Parser (Exp Int)
 intexp = intexp0
@@ -223,7 +217,7 @@ comm0 :: Parser Comm
 comm0 = chainl1 comm1 seqComm
 
 comm1 :: Parser Comm
-comm1 = skipComm <|> letComm <|> iteComm <|> ruComm
+comm1 = skipComm <|> iteComm <|> ruComm <|> letComm
 
 comm :: Parser Comm
 comm = comm0
