@@ -16,8 +16,6 @@ data Exp a where
   Minus  :: Exp Int -> Exp Int -> Exp Int
   Times  :: Exp Int -> Exp Int -> Exp Int
   Div    :: Exp Int -> Exp Int -> Exp Int
-  EAssgn :: Variable -> Exp Int -> Exp Int
-  ESeq   :: Exp Int -> Exp Int -> Exp Int
 
   -- Expresiones booleanas
   BTrue  :: Exp Bool
@@ -47,3 +45,4 @@ pattern IfThen :: Exp Bool -> Comm -> Comm
 pattern IfThen b c = IfThenElse b c Skip
 
 data Error = DivByZero | UndefVar deriving (Eq, Show)
+
