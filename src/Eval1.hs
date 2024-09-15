@@ -74,18 +74,13 @@ evalExp :: Exp a -> State -> Pair a State
 -- Expresiones enteras
 evalExp (Const nv)    s = nv :!: s
 evalExp (Var x)       s = lookfor x s :!: s
-evalExp (VarInc x)    s = lookfor x s + 1 :!: s
-evalExp (VarDec x)    s = lookfor x s - 1 :!: s
+evalExp (VarInc x)    s = let n = lookfor x s in (n+1) :!: update x (n+1) s
+evalExp (VarDec x)    s = let n = lookfor x s in (n-1) :!: update x (n-1) s
 evalExp (UMinus e0)   s = evalUnOp  negate e0 s
 evalExp (Plus e0 e1)  s = evalBinOp (+)    e0 e1 s
 evalExp (Minus e0 e1) s = evalBinOp (-)    e0 e1 s
 evalExp (Times e0 e1) s = evalBinOp (*)    e0 e1 s
 evalExp (Div e0 e1)   s = evalBinOp div    e0 e1 s
-evalExp (EAssgn v e)  s = let n :!: s'  = evalExp e s 
-                          in n :!: update v n s'
-evalExp (ESeq e1 e2)  s = let _ :!: s'  = evalExp e1 s
-                              n :!: s'' = evalExp e2 s'
-                          in n :!: s''
 
 -- Expresiones booleanas
 evalExp BTrue       s = True :!: s
