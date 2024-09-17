@@ -42,31 +42,31 @@ stepComm Skip s = Skip :!: s
 
 -- Evalúa comando de asignación
 stepComm (Let v e) s = let n :!: s' = evalExp e s
-                       in Skip :!: update v n s'
+                        in Skip :!: update v n s'
 
 -- Evalúa composición secuencial
 stepComm (Seq Skip c1) s = c1 :!: s
 stepComm (Seq c0 c1)   s = let c0' :!: s' = stepComm c0 s
-                           in Seq c0' c1 :!: s'
+                            in Seq c0' c1 :!: s'
 
 -- Evalúa ejecución condicional
 stepComm (IfThenElse b c0 c1) s = case evalExp b s of
-                                    True  :!: s' -> c0 :!: s'
-                                    False :!: s' -> c1 :!: s'
+                                      True  :!: s' -> c0 :!: s'
+                                      False :!: s' -> c1 :!: s'
 
 -- Evalúa ciclos
 stepComm r@(RepeatUntil c b) s = Seq c (IfThenElse b Skip r) :!: s
 
 -- Evalúa operador unario
 evalUnOp :: (t -> a) -> Exp t -> State -> Pair a State
-evalUnOp op e s = let n :!: s' = evalExp e s 
-                  in op n :!: s'
+evalUnOp op e s = let n :!: s' = evalExp e s
+                    in op n :!: s'
 
 -- Evalúa operador binario
 evalBinOp :: (t1 -> t2 -> a) -> Exp t1 -> Exp t2 -> State -> Pair a State
 evalBinOp op e0 e1 s = let n0 :!: s'  = evalExp e0 s
                            n1 :!: s'' = evalExp e1 s'
-                       in  op n0 n1 :!: s''
+                        in op n0 n1 :!: s''
 
 -- Evalúa una expresión
 evalExp :: Exp a -> State -> Pair a State
@@ -74,16 +74,18 @@ evalExp :: Exp a -> State -> Pair a State
 -- Expresiones enteras
 evalExp (Const nv)    s = nv :!: s
 evalExp (Var x)       s = lookfor x s :!: s
-evalExp (VarInc x)    s = let n = lookfor x s in (n+1) :!: update x (n+1) s
-evalExp (VarDec x)    s = let n = lookfor x s in (n-1) :!: update x (n-1) s
-evalExp (UMinus e0)   s = evalUnOp  negate e0 s
+evalExp (VarInc x)    s = let n = lookfor x s
+                            in (n+1) :!: update x (n+1) s
+evalExp (VarDec x)    s = let n = lookfor x s
+                            in (n-1) :!: update x (n-1) s
+evalExp (UMinus e0)   s = evalUnOp  negate e0    s
 evalExp (Plus e0 e1)  s = evalBinOp (+)    e0 e1 s
 evalExp (Minus e0 e1) s = evalBinOp (-)    e0 e1 s
 evalExp (Times e0 e1) s = evalBinOp (*)    e0 e1 s
 evalExp (Div e0 e1)   s = evalBinOp div    e0 e1 s
 
 -- Expresiones booleanas
-evalExp BTrue       s = True :!: s
+evalExp BTrue       s = True  :!: s
 evalExp BFalse      s = False :!: s
 evalExp (Lt e0 e1)  s = evalBinOp (<)  e0 e1 s
 evalExp (Gt e0 e1)  s = evalBinOp (>)  e0 e1 s
