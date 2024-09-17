@@ -157,7 +157,7 @@ orBool = do reservedOp lis "||"
 -- Parser '!'
 notBool :: Parser (Exp Bool)
 notBool = do reservedOp lis "!"
-             Not <$> boolexp3
+             Not <$> boolexp2
 
 -- Parsers de precedencia de operadores
 boolexp0 :: Parser (Exp Bool)
