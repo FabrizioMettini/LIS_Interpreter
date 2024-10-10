@@ -1,0 +1,98 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{proof}
+\usepackage{amssymb}
+
+\title{TP1 ALP}
+\author{Fabrizio Mettini (M-6842/1), Matías Raimundez (R-4575/6)}
+\date{Septiembre de 2024}
+
+\begin{document}
+
+\maketitle
+
+\section{Ejercicio 1}
+
+Incluimos los operadores $++$ y $--$ como expresiones enteras de tipo $var{+}{+}$ y $var{-}{-}$, donde $var$ denota el conjunto de variables.\\\\
+\noindent{}La sintaxis abstracta para expresiones enteras resulta:\\\\
+$intexp::=nat\,|\,var$\\
+${}\hspace{12mm}|\,var{+}{+}\,|\,var{-}{-}$\\
+${}\hspace{12mm}|-_u intexp$\\
+${}\hspace{12mm}|\,intexp+intexp$\\
+${}\hspace{12mm}|\,intexp-_b intexp$\\
+${}\hspace{12mm}|\,intexp\times intexp$\\
+${}\hspace{12mm}|\,intexp\div intexp$\\\\
+\noindent{}La sintaxis concreta se extiende como\\\\
+$intexp::=nat\,|\,var$\\
+${}\hspace{12mm}|\,var\,\,{'+}{+'}\,|\,var\,\,{'-}{-'}$\\
+${}\hspace{12mm}|\,{'-'}\,intexp$\\
+${}\hspace{12mm}|\,intexp\,\,{'+'}\,\,intexp$\\
+${}\hspace{12mm}|\,intexp\,\,{'-'}\,\,intexp$\\
+${}\hspace{12mm}|\,intexp\,\,{'*'}\,\,intexp$\\
+${}\hspace{12mm}|\,intexp\,\,{'/'}\,\,intexp$\\
+${}\hspace{12mm}|\,{'('}\,\,intexp\,\,{')'}$\\
+
+\section{Ejercicio 4}
+
+Introducimos dos reglas de derivación, la regla \textsc{V\footnotesize{AR}\normalsize{I}\footnotesize{NC}} indica que si $v$ es una variable y $\sigma$ un estado, la expresión $v{+}{+}$ se deriva como $\sigma v\,\textbf{+1}$ y el estado pasa a ser $[\sigma|v:\sigma v\,\textbf{+1}]$; la regla \textsc{V\footnotesize{AR}\normalsize{D}\footnotesize{EC}} es análoga con el operador ${-}{-}$.\\
+
+\infer[\textsc{V\footnotesize{AR}\normalsize{I}\footnotesize{NC}}]{\langle x{+}{+},\sigma\rangle \Downarrow_{exp} \langle\sigma x\,\textbf{+1},[\sigma|x:\sigma x\,\textbf{+1}]\rangle}{x\in {dom}\,\sigma}
+.\\
+\infer[\textsc{V\footnotesize{AR}\normalsize{D}\footnotesize{EC}}]{\langle x{-}{-},\sigma\rangle \Downarrow_{exp} \langle\sigma x -\textbf{1},[\sigma|x:\sigma x -\textbf{1}]\rangle}{x\in {dom}\,\sigma}
+
+\section{Ejercicio 5}
+
+Demostramos que la relación de evaluación en un paso $\leadsto$ es determinista por inducción en $comm$:\\
+
+\noindent Casos base:\\
+
+\noindent Para el programa $\textbf{skip}$ tenemos que para cualquier estado $\sigma$ no existe ningún par $\langle c,\sigma '\rangle$ tal que $\langle\textbf{skip},\sigma\rangle\leadsto\langle c,\sigma '\rangle$.\\
+
+\noindent Para un programa de la forma $v=e$ y cualquier estado $\sigma$ tenemos que, siendo $\langle e,\sigma\rangle\Downarrow_{exp}\langle n,\sigma '\rangle$ la única derivación de $\langle e,\sigma\rangle$, si existe (ya que $\Downarrow_{exp}$ es determinista), tenemos que la única evaluación de $\langle v=e,\sigma\rangle$ es $\langle v=e,\sigma\rangle\leadsto\langle skip,[\sigma'|v:n]\rangle$ por la regla $\textsc{A\footnotesize{SS}}$.\\
+
+\noindent Paso inductivo:\\
+
+\noindent Para un programa de la forma $\textbf{if}\,b\,\textbf{then}\,c_0\,\textbf{else}\,c_1$ y cualquier estado $\sigma$ tenemos que si $\langle b,\sigma\rangle\Downarrow_{exp}\langle\textbf{true},\sigma'\rangle$ entonces la única evaluación posible es \\$\langle\textbf{if}\,b\,\textbf{then}\,c_0\,\textbf{else}\,c_1,\sigma\rangle\leadsto\langle c_0,\sigma'\rangle$ por la regla IF_1, $\,mientras que si\,$ $\langle b,\sigma\rangle\Downarrow_{exp}\langle\textbf{false},\sigma'\rangle$ entonces la única evaluación posible es $\langle\textbf{if}\,b\,\textbf{then}\,c_0\,\textbf{else}\,c_1,\sigma\rangle\leadsto\langle c_1,\sigma'\rangle$ por la regla IF_2. $\,Como\,$ $\Downarrow_{exp}$ es determinista, a lo sumo una de las dos opciones es posible y las derivaciones son únicas.\\
+
+\noindent Para un programa de la forma $\textbf{repeat}\,c\,\textbf{until}\,b$ y cualquier estado $\sigma$ tenemos que la única evaluación posible es \\$\langle\textbf{repeat}\,c\,\textbf{until}\,b,\sigma\rangle\leadsto\langle c;\textbf{if}\,b\,\textbf{then}\,\textbf{skip}\,\textbf{else}\,\textbf{repeat}\,c\,\textbf{until}\,b,\sigma\rangle$ por la regla $\textsc{R\footnotesize{EPEAT}}$.\\
+
+\noindent Para un programa de la forma $c_0;c_1$ y cualquier estado $\sigma$, tenemos que si $c_0$ es $\textbf{skip}$ la única evaluación posible es $\langle\textbf{skip};c_1,\sigma\rangle\leadsto\langle c_1,\sigma\rangle$ por la regla SEQ_1 ($la regla SEQ_2$ no se puede aplicar porque $\textbf{skip}$ está en forma normal), y sino por hipótesis inductiva tenemos que existe una única evaluación $\langle c_0,\sigma\rangle\leadsto\langle c_0',\sigma'\rangle$ (si existe), luego la única evaluación posible es $\langle c_0;c_1,\sigma\rangle\leadsto\langle c_0';c_1,\sigma'\rangle$ por la regla SEQ_2.\\
+
+\section{Ejercicio 6}
+
+Para ambos programas, siendo $\sigma$ el estado inicial, si la variable $x$ no se encuentra en el dominio de $\sigma$ tenemos que no es posible evaluar los programas ya que no es posible derivar el valor de $x$. En cambio, si tenemos que $x\in dom\,\sigma$, para el programa $x=x+1;y=x$ tenemos que $\langle x=x+1;y=x,\sigma\rangle$ evalúa en tres pasos a $\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1},y:\sigma x\,\textbf{+1}]\rangle$, dadas las siguientes evaluaciones:\\
+
+\infer[\textsc{S\footnotesize{EQ}}_2]{\langle x=x+1;y=x,\sigma\rangle\leadsto\langle\textbf{skip};y=x,[\sigma|x:\sigma x\,\textbf{+1}]\rangle}
+{
+\infer[\textsc{A\footnotesize{SS}}]{\langle x=x+1,\sigma\rangle\leadsto\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1}]\rangle}
+{
+\infer[\textsc{P\footnotesize{LUS}}]{\langle x+1,\sigma\rangle\Downarrow_{exp}\langle\sigma x\,\textbf{+1},\sigma\rangle}
+{
+\infer[\textsc{V\footnotesize{AR}}]{\langle x,\sigma\rangle\Downarrow_{exp}\langle\sigma x,\sigma\rangle}{x\in dom\,\sigma}
+&
+\infer[\textsc{N\footnotesize{VAL}}]{\langle 1,\sigma\rangle\Downarrow_{exp}\langle \textbf{1},\sigma\rangle}{}}}}
+
+.\\
+
+\infer[\textsc{S\footnotesize{EQ}}_1]{\langle\textbf{skip};y=x,[\sigma|x:\sigma x\,\textbf{+1}]\rangle\leadsto\langle y=x,[\sigma|x:\sigma x\,\textbf{+1}]\rangle}{}
+
+.\\
+
+\infer[\textsc{A\footnotesize{SS}}]{\langle y=x,[\sigma|x:\sigma x\,\textbf{+1}]\rangle\leadsto\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1},y:\sigma x\,\textbf{+1}]\rangle}
+{
+\infer[\textsc{V\footnotesize{AR}}]{\langle x,[\sigma|x:\sigma x\,\textbf{+1}]\rangle\Downarrow_{exp}\langle\sigma x\,\textbf{+1},[\sigma|x:\sigma x\,\textbf{+1}]\rangle}{x\in dom\,[\sigma|x:\sigma x\,\textbf{+1}]}
+}
+
+.\\
+
+\noindent Para el programa $y=x{+}{+}$ tenemos que $\langle y=x{+}{+},\sigma\rangle$ evalúa en un paso a $\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1},y:\sigma x\,\textbf{+1}]\rangle$ como sigue:\\
+
+\infer[\textsc{A\footnotesize{SS}}]{\langle y=x{+}{+},\sigma\rangle\leadsto\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1},y:\sigma x\,\textbf{+1}]\rangle}
+{
+\infer[\textsc{V\footnotesize{AR}\normalsize{I}\footnotesize{NC}}]{\langle x{+}{+},\sigma\rangle \Downarrow_{exp} \langle\sigma x\,\textbf{+1},[\sigma|x:\sigma x\,\textbf{+1}]\rangle}{x\in {dom}\,\sigma}
+}
+.\\
+
+\noindent En ambos casos obtenemos $\langle c,\sigma\rangle\leadsto^*\langle\textbf{skip},[\sigma|x:\sigma x\,\textbf{+1},y:\sigma x\,\textbf{+1}]\rangle$, siendo $c$ el programa inicial, por lo tanto concluimos que $x=x+1;y=x$ e $y=x{+}{+}$ son semánticamente equivalentes.
+
+\end{document}
